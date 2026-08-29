@@ -52,7 +52,6 @@ def test_parse_student_grid_captures_each_rows_own_detail_target() -> None:
 def test_parse_student_grid_skips_rows_without_a_detail_link() -> None:
     rows = parse_student_grid(GRID_HTML_WITH_SPURIOUS_ROW)
 
-
     assert [r.student_id for r in rows] == ["STU-10000", "STU-10001"]
     assert rows[0].detail_target == "gvStudents$ctl02$lnkDetail"
     assert rows[1].detail_target == "gvStudents$ctl04$lnkDetail"

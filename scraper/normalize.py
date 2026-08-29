@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 def parse_date(raw: str) -> datetime | None:
-    
+
     raw = raw.strip()
     if not raw:
         return None
