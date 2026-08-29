@@ -31,7 +31,13 @@ class PostbackTargetNotFoundError(WebFormsError):
 class UnexpectedResponseError(WebFormsError):
     """Raised when the server responds with a non-2xx status or an unreadable body."""
 
-    def __init__(self, status_code: int, url: str) -> None:
-        super().__init__(f"Unexpected response ({status_code}) from {url}")
+    def __init__(self, status_code: int, url: str, body_snippet:str="") -> None:
+        
+        message = f"Unexpected response {status_code} from {url}"
+        
+        if body_snippet:
+            message += f"\n --- response body (first 2000 chars) ---\n {body_snippet}"
+        
+        super().__init__(message)
         self.status_code = status_code
         self.url = url

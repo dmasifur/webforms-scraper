@@ -64,31 +64,91 @@ def extract_form_fields(html: str) -> dict[str, str]:
     return fields
 
 
+def _postback_target_from_onclick(onclick: str) -> str | None:
+    if "__doPostBack" not in onclick:
+        return None
+    start = onclick.find("__doPostBack('") + len("__doPostBack('")
+    end = onclick.find("'", start)
+    if start > -1 and end > -1:
+        return onclick[start:end]
+    return None
+
+
 def find_postback_target(html: str, hint: str) -> str:
 
     soup = parse_html(html)
     for tag in soup.find_all(["a", "input"]):
         onclick = _attr_str(tag, "onclick") or _attr_str(tag, "href")
-        if "__doPostBack" in onclick and hint in onclick:
-            start = onclick.find("__doPostBack('") + len("__doPostBack('")
-            end = onclick.find("'", start)
-            if start > -1 and end > -1:
-                return onclick[start:end]
+        if hint in onclick:
+            target = _postback_target_from_onclick(onclick)
+            if target is not None:
+                return target
 
     raise PostbackTargetNotFoundError(hint)
 
 
-def find_row_postback_targets(html: str, hint: str) -> list[str]:
-
-    soup = parse_html(html)
-    targets: list[str] = []
-
-    for tag in soup.find_all(["a", "input"]):
+def find_row_postback_target(row: Tag, hint: str) -> str | None:
+    for tag in row.find_all(["a", "input"]):
         onclick = _attr_str(tag, "onclick") or _attr_str(tag, "href")
-        if "__doPostBack" in onclick and hint in onclick:
-            start = onclick.find("__doPostBack('") + len("__doPostBack('")
-            end = onclick.find("'", start)
-            if start > -1 and end > -1:
-                targets.append(onclick[start:end])
+        if hint in onclick:
+            target = _postback_target_from_onclick(onclick)
+            if target is not None:
+                return target
+    return None
 
-    return targets
+
+def find_submit_field(html: str, hint: str) -> tuple[str, str]:
+    soup = parse_html(html)
+    for tag in soup.find_all("input"):
+        if _attr_str(tag, "type", "text").lower() != "submit":
+            continue
+        name = _attr_str(tag, "name")
+        if name and hint in name:
+            return name, _attr_str(tag, "value")
+
+    raise PostbackTargetNotFoundError(hint)
+
+
+def _parse_dopostback(raw: str) -> tuple[str, str] | None:
+    if "__doPostBack" not in raw:
+        return None
+    cleaned = raw.replace("\\'", "'").replace('\\"', '"')
+    start = cleaned.find("__doPostBack(")
+    if start == -1:
+        return None
+    inner = cleaned[start + len("__doPostBack(") :]
+    end = inner.find(")")
+    if end == -1:
+        return None
+    parts = [p.strip().strip("'\"") for p in inner[:end].split(",")]
+    if len(parts) < 2:
+        return None
+    return parts[0], parts[1]
+
+
+def find_pager_link(html: str, page_number: int) -> tuple[str, str]:
+    soup = parse_html(html)
+    pager = soup.find("tr", class_="pager")
+    if pager is None or not isinstance(pager, Tag):
+        raise PostbackTargetNotFoundError("pager row (tr.pager)")
+
+    for tag in pager.find_all("a"):
+        if tag.get_text(strip=True) != str(page_number):
+            continue
+        parsed = _parse_dopostback(_attr_str(tag, "onclick") or _attr_str(tag, "href"))
+        if parsed:
+            return parsed
+
+    raise PostbackTargetNotFoundError(f"pager link for page {page_number}")
+
+
+def find_select_postback_target(html: str, hint: str) -> tuple[str, str]:
+    soup = parse_html(html)
+    for tag in soup.find_all("select"):
+        name = _attr_str(tag, "name")
+        if not name or hint not in name:
+            continue
+        parsed = _parse_dopostback(_attr_str(tag, "onchange"))
+        return (name, parsed[0]) if parsed else (name, name)
+
+    raise PostbackTargetNotFoundError(hint)

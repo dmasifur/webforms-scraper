@@ -7,7 +7,7 @@ from types import TracebackType
 import requests
 
 from scraper.exceptions import LoginFailedError, UnexpectedResponseError
-from scraper.forms import extract_form_fields, find_postback_target, find_row_postback_targets
+from scraper.forms import extract_form_fields, find_postback_target, find_submit_field
 
 logger = logging.getLogger(__name__)
 
@@ -55,10 +55,10 @@ class WebFormsClient:
             try:
                 response = self.session.request(method, url, timeout=self.timeout, **kwargs)  # type: ignore[arg-type]
                 if response.status_code >= 500:
-                    raise UnexpectedResponseError(response.status_code, url)
+                    raise UnexpectedResponseError(response.status_code, url, response.text[:2000])
                 if response.status_code >= 400:
                     # 4xx is not retried — retrying won't fix a bad request or auth failure.
-                    raise UnexpectedResponseError(response.status_code, url)
+                    raise UnexpectedResponseError(response.status_code, url, response.text[:2000])
                 return response
             except (requests.RequestException, UnexpectedResponseError) as exc:
                 last_error = exc
@@ -88,7 +88,7 @@ class WebFormsClient:
     def submit(
         self, current_html: str, path: str, extra_fields: dict[str, str] | None = None
     ) -> str:
-       
+
         fields = extract_form_fields(current_html)
         if extra_fields:
             fields.update(extra_fields)
@@ -102,26 +102,32 @@ class WebFormsClient:
         current_html: str,
         path: str,
         *,
-        target_hint: str,
+        target: str | None,
+        target_hint: str | None = None,
         argument: str = "",
-        row_index: int | None = None,
+        extra_fields: dict[str, str] | None = None,
     ) -> str:
 
-        if row_index is not None:
-            targets = find_row_postback_targets(current_html, target_hint)
-            target = targets[row_index]
-        else:
+        if target is None:
+            if target_hint is None:
+                raise ValueError("Provide either target or target_hints")
+
             target = find_postback_target(current_html, target_hint)
 
         fields = extract_form_fields(current_html)
         fields["__EVENTTARGET"] = target
         fields["__EVENTARGUMENT"] = argument
 
+        if extra_fields:
+            fields.update(extra_fields)
+
         time.sleep(self.delay_seconds)
         response = self._request("POST", path, data=fields)
         return response.text
 
-    def login(self, username: str, password: str, *, login_path: str) -> str:
+    def login(
+        self, username: str, password: str, *, login_path: str, submit_hint: str = "btnLogin"
+    ) -> str:
 
         login_html = self.get(login_path)
         fields = extract_form_fields(login_html)
@@ -132,6 +138,8 @@ class WebFormsClient:
             elif "txtPass" in name:
                 fields[name] = password
 
+        button_name, button_value = find_submit_field(login_html, submit_hint)
+        fields[button_name] = button_value
         time.sleep(self.delay_seconds)
         response = self._request("POST", login_path, data=fields)
         result_html = response.text
