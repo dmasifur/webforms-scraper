@@ -3,8 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-# TODO: Replace the BASE URL
-DEFAULT_BASE_URL = "https://localhost:44300"
+DEFAULT_BASE_URL = "http://localhost:51286"
 
 
 @dataclass(frozen=True)
