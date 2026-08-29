@@ -7,12 +7,7 @@ from types import TracebackType
 import requests
 
 from scraper.exceptions import LoginFailedError, UnexpectedResponseError
-from scraper.forms import (
-    extract_form_fields,
-    find_postback_target,
-    find_row_postback_targets,
-    find_submit_field,
-)
+from scraper.forms import extract_form_fields, find_postback_target, find_submit_field
 
 logger = logging.getLogger(__name__)
 
@@ -109,14 +104,8 @@ class WebFormsClient:
         *,
         target_hint: str,
         argument: str = "",
-        row_index: int | None = None,
     ) -> str:
-
-        if row_index is not None:
-            targets = find_row_postback_targets(current_html, target_hint)
-            target = targets[row_index]
-        else:
-            target = find_postback_target(current_html, target_hint)
+        target = find_postback_target(current_html, target_hint)
 
         fields = extract_form_fields(current_html)
         fields["__EVENTTARGET"] = target

@@ -70,8 +70,7 @@ def scrape_all(client: WebFormsClient) -> list[dict[str, object]]:
                 seen_ids.add(row.student_id)
 
                 detail_html = client.postback(
-                    page_html, LIST_PATH, target_hint="lnkDetail",
-                    row_index=[r.student_id for r in rows].index(row.student_id),
+                    page_html, LIST_PATH, target_hint=row.detail_target
                 )
                 detail = parse_student_detail(detail_html)
 
@@ -90,11 +89,6 @@ def scrape_all(client: WebFormsClient) -> list[dict[str, object]]:
                         "emergency_contact": detail.emergency_contact,
                     }
                 )
-
-             
-                page_html = client.get(LIST_PATH)
-                if campus_value:
-                    page_html = client.postback(page_html, LIST_PATH, target_hint="ddlCampus")
 
             if not has_next_page(page_html):
                 break

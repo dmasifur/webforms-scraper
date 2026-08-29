@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from bs4 import BeautifulSoup, Tag
 
+from scraper.forms import find_row_postback_target
 from scraper.normalize import clean_text
 
 
@@ -17,6 +18,7 @@ class StudentRow:
     course: str
     enrolled: str
     status: str
+    detail_target: str
 
 
 @dataclass
@@ -41,6 +43,11 @@ def parse_student_grid(html: str) -> list[StudentRow]:
         # Data rows have exactly 7 <td>s: 6 bound columns + the View link column.
         if len(cells) != 7:
             continue
+        # A row without a resolvable detail link isn't a usable data row
+        # (e.g. a summary/footer row that happens to also have 7 <td>s).
+        detail_target = find_row_postback_target(tr, "lnkDetail")
+        if detail_target is None:
+            continue
         rows.append(
             StudentRow(
                 student_id=clean_text(cells[0].get_text()),
@@ -49,6 +56,7 @@ def parse_student_grid(html: str) -> list[StudentRow]:
                 course=clean_text(cells[3].get_text()),
                 enrolled=clean_text(cells[4].get_text()),
                 status=clean_text(cells[5].get_text()),
+                detail_target=detail_target,
             )
         )
     return rows
