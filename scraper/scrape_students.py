@@ -12,7 +12,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from scraper.config import ScraperConfig
 from scraper.exceptions import WebFormsError
-from scraper.forms import parse_html
+from scraper.forms import find_pager_postback_target, parse_html
 from scraper.normalize import parse_date
 from scraper.parse_pages import has_next_page, parse_student_detail, parse_student_grid
 from scraper.webforms_client import WebFormsClient
@@ -92,8 +92,9 @@ def scrape_all(client: WebFormsClient) -> list[dict[str, object]]:
 
             if not has_next_page(page_html):
                 break
+            pager_target = find_pager_postback_target(page_html)
             page_html = client.postback(
-                page_html, LIST_PATH, target_hint="gvStudents", argument=f"Page${page_number + 1}"
+                page_html, LIST_PATH, target_hint=pager_target, argument=f"Page${page_number + 1}"
             )
             page_number += 1
 

@@ -107,3 +107,20 @@ def find_submit_field(html: str, hint: str) -> tuple[str, str]:
             return name, _attr_str(tag, "value")
 
     raise PostbackTargetNotFoundError(hint)
+
+
+def find_pager_postback_target(html: str) -> str:
+    soup = parse_html(html)
+    pager = soup.find("tr", class_="pager")
+    if pager is None or not isinstance(pager, Tag):
+        raise PostbackTargetNotFoundError("pager row (tr.pager)")
+
+    for tag in pager.find_all("a"):
+        if not isinstance(tag, Tag):
+            continue
+        onclick = _attr_str(tag, "onclick") or _attr_str(tag, "href")
+        target = _postback_target_from_onclick(onclick)
+        if target is not None:
+            return target
+
+    raise PostbackTargetNotFoundError("pager link inside tr.pager")
