@@ -1,0 +1,24 @@
+01:12:15 INFO     Login succeeded for user 'demo'
+01:12:16 INFO     Found 5 campus filter options
+01:12:16 INFO     Scraping campus filter: All campuses
+01:12:16 INFO       Page 1: 20 rows
+01:12:41 INFO       Page 2: 20 rows
+01:13:05 INFO       Page 3: 20 rows
+01:13:29 INFO       Page 4: 20 rows
+01:13:52 INFO       Page 5: 20 rows
+01:14:16 INFO       Page 6: 20 rows
+01:14:40 INFO       Page 7: 17 rows
+01:14:59 INFO     Scraping campus filter: Eastgate
+01:15:00 INFO       Page 1: 20 rows
+01:15:01 INFO       Page 2: 19 rows
+01:15:01 INFO     Scraping campus filter: Northbridge
+01:15:02 INFO       Page 1: 20 rows
+01:15:03 INFO       Page 2: 16 rows
+01:15:03 INFO     Scraping campus filter: Southpoint
+01:15:04 INFO       Page 1: 20 rows
+01:15:05 INFO       Page 2: 7 rows
+01:15:05 INFO     Scraping campus filter: Westfield
+01:15:07 INFO       Page 1: 20 rows
+01:15:08 INFO       Page 2: 15 rows
+01:15:08 INFO     Scrape complete: 137 unique students across 5 campus filters
+01:15:08 INFO     Wrote 137 records to output/students.xlsx
