@@ -1,0 +1,42 @@
+<%@ Master Language="C#" %>
+<%--
+     The master page is what produces ctl00$Main$... control IDs — the exact
+     naming-container prefix that makes real WebForms targets unguessable. --%>
+<!DOCTYPE html>
+<html>
+<head runat="server">
+    <title>Northbridge Institute — Student Records</title>
+    <style type="text/css">
+        body { font-family: Segoe UI, Arial, sans-serif; margin: 0; background: #f4f5f7; color: #222; }
+        .masthead { background: #1f3a5f; color: #fff; padding: 14px 28px; }
+        .masthead h1 { margin: 0; font-size: 18px; font-weight: 600; }
+        .masthead span { font-size: 12px; opacity: .75; }
+        .shell { max-width: 1100px; margin: 24px auto; background: #fff;
+                 border: 1px solid #d8dbe0; padding: 22px 26px; }
+        table.grid { border-collapse: collapse; width: 100%; font-size: 13px; }
+        table.grid th { background: #eceff3; text-align: left; padding: 8px 10px;
+                        border-bottom: 2px solid #c8ccd3; }
+        table.grid td { padding: 7px 10px; border-bottom: 1px solid #e6e8ec; }
+        table.grid tr:hover td { background: #f7f9fc; }
+        .pager td { padding: 10px 4px; }
+        .pager a, .pager span { padding: 2px 7px; }
+        .toolbar { margin-bottom: 16px; font-size: 13px; }
+        .toolbar select { padding: 4px; font-size: 13px; }
+        .dl { font-size: 14px; }
+        .dl th { text-align: left; width: 200px; padding: 7px 10px;
+                 background: #f6f7f9; border-bottom: 1px solid #e6e8ec; font-weight: 600; }
+        .dl td { padding: 7px 10px; border-bottom: 1px solid #e6e8ec; }
+    </style>
+</head>
+<body>
+    <form id="form1" runat="server">
+    <div class="masthead">
+        <h1>Northbridge Institute</h1>
+        <span>Student Records Management — v4.2.1 (build 2011.08)</span>
+    </div>
+    <div class="shell">
+        <asp:ContentPlaceHolder ID="Main" runat="server" />
+    </div>
+    </form>
+</body>
+</html>
