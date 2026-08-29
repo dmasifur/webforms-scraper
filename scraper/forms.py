@@ -92,3 +92,15 @@ def find_row_postback_targets(html: str, hint: str) -> list[str]:
                 targets.append(onclick[start:end])
 
     return targets
+
+
+def find_submit_field(html: str, hint: str) -> tuple[str, str]:
+    soup = parse_html(html)
+    for tag in soup.find_all("input"):
+        if _attr_str(tag, "type", "text").lower() != "submit":
+            continue
+        name = _attr_str(tag, "name")
+        if name and hint in name:
+            return name, _attr_str(tag, "value")
+
+    raise PostbackTargetNotFoundError(hint)

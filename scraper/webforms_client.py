@@ -7,7 +7,12 @@ from types import TracebackType
 import requests
 
 from scraper.exceptions import LoginFailedError, UnexpectedResponseError
-from scraper.forms import extract_form_fields, find_postback_target, find_row_postback_targets
+from scraper.forms import (
+    extract_form_fields,
+    find_postback_target,
+    find_row_postback_targets,
+    find_submit_field,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +126,9 @@ class WebFormsClient:
         response = self._request("POST", path, data=fields)
         return response.text
 
-    def login(self, username: str, password: str, *, login_path: str) -> str:
+    def login(
+        self, username: str, password: str, *, login_path: str, submit_hint: str = "btnLogin"
+    ) -> str:
 
         login_html = self.get(login_path)
         fields = extract_form_fields(login_html)
@@ -132,6 +139,8 @@ class WebFormsClient:
             elif "txtPass" in name:
                 fields[name] = password
 
+        button_name, button_value = find_submit_field(login_html, submit_hint)
+        fields[button_name] = button_value
         time.sleep(self.delay_seconds)
         response = self._request("POST", login_path, data=fields)
         result_html = response.text
