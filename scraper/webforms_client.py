@@ -55,10 +55,10 @@ class WebFormsClient:
             try:
                 response = self.session.request(method, url, timeout=self.timeout, **kwargs)  # type: ignore[arg-type]
                 if response.status_code >= 500:
-                    raise UnexpectedResponseError(response.status_code, url)
+                    raise UnexpectedResponseError(response.status_code, url, response.text[:2000])
                 if response.status_code >= 400:
                     # 4xx is not retried — retrying won't fix a bad request or auth failure.
-                    raise UnexpectedResponseError(response.status_code, url)
+                    raise UnexpectedResponseError(response.status_code, url, response.text[:2000])
                 return response
             except (requests.RequestException, UnexpectedResponseError) as exc:
                 last_error = exc
