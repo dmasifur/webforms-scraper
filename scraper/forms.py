@@ -109,18 +109,46 @@ def find_submit_field(html: str, hint: str) -> tuple[str, str]:
     raise PostbackTargetNotFoundError(hint)
 
 
-def find_pager_postback_target(html: str) -> str:
+def _parse_dopostback(raw: str) -> tuple[str, str] | None:
+    if "__doPostBack" not in raw:
+        return None
+    cleaned = raw.replace("\\'", "'").replace('\\"', '"')
+    start = cleaned.find("__doPostBack(")
+    if start == -1:
+        return None
+    inner = cleaned[start + len("__doPostBack(") :]
+    end = inner.find(")")
+    if end == -1:
+        return None
+    parts = [p.strip().strip("'\"") for p in inner[:end].split(",")]
+    if len(parts) < 2:
+        return None
+    return parts[0], parts[1]
+
+
+def find_pager_link(html: str, page_number: int) -> tuple[str, str]:
     soup = parse_html(html)
     pager = soup.find("tr", class_="pager")
     if pager is None or not isinstance(pager, Tag):
         raise PostbackTargetNotFoundError("pager row (tr.pager)")
 
     for tag in pager.find_all("a"):
-        if not isinstance(tag, Tag):
+        if tag.get_text(strip=True) != str(page_number):
             continue
-        onclick = _attr_str(tag, "onclick") or _attr_str(tag, "href")
-        target = _postback_target_from_onclick(onclick)
-        if target is not None:
-            return target
+        parsed = _parse_dopostback(_attr_str(tag, "onclick") or _attr_str(tag, "href"))
+        if parsed:
+            return parsed
 
-    raise PostbackTargetNotFoundError("pager link inside tr.pager")
+    raise PostbackTargetNotFoundError(f"pager link for page {page_number}")
+
+
+def find_select_postback_target(html: str, hint: str) -> tuple[str, str]:
+    soup = parse_html(html)
+    for tag in soup.find_all("select"):
+        name = _attr_str(tag, "name")
+        if not name or hint not in name:
+            continue
+        parsed = _parse_dopostback(_attr_str(tag, "onchange"))
+        return (name, parsed[0]) if parsed else (name, name)
+
+    raise PostbackTargetNotFoundError(hint)

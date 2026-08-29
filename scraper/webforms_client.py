@@ -88,7 +88,7 @@ class WebFormsClient:
     def submit(
         self, current_html: str, path: str, extra_fields: dict[str, str] | None = None
     ) -> str:
-       
+
         fields = extract_form_fields(current_html)
         if extra_fields:
             fields.update(extra_fields)
@@ -102,14 +102,24 @@ class WebFormsClient:
         current_html: str,
         path: str,
         *,
-        target_hint: str,
+        target: str | None,
+        target_hint: str | None = None,
         argument: str = "",
+        extra_fields: dict[str, str] | None = None,
     ) -> str:
-        target = find_postback_target(current_html, target_hint)
+
+        if target is None:
+            if target_hint is None:
+                raise ValueError("Provide either target or target_hints")
+
+            target = find_postback_target(current_html, target_hint)
 
         fields = extract_form_fields(current_html)
         fields["__EVENTTARGET"] = target
         fields["__EVENTARGUMENT"] = argument
+
+        if extra_fields:
+            fields.update(extra_fields)
 
         time.sleep(self.delay_seconds)
         response = self._request("POST", path, data=fields)

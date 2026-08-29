@@ -1,5 +1,3 @@
-
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -39,12 +37,11 @@ def parse_student_grid(html: str) -> list[StudentRow]:
 
     rows: list[StudentRow] = []
     for tr in table.find_all("tr"):
-        cells = tr.find_all("td")
-        # Data rows have exactly 7 <td>s: 6 bound columns + the View link column.
+        cells = tr.find_all("td", recursive=False)
+
         if len(cells) != 7:
             continue
-        # A row without a resolvable detail link isn't a usable data row
-        # (e.g. a summary/footer row that happens to also have 7 <td>s).
+
         detail_target = find_row_postback_target(tr, "lnkDetail")
         if detail_target is None:
             continue
@@ -63,12 +60,12 @@ def parse_student_grid(html: str) -> list[StudentRow]:
 
 
 def has_next_page(html: str) -> bool:
-    
+
     soup = BeautifulSoup(html, "lxml")
     pager = soup.find("tr", class_="pager")
     if pager is None or not isinstance(pager, Tag):
         return False
-   
+
     found_current = False
     for child in pager.find_all(["span", "a"]):
         if child.name == "span":

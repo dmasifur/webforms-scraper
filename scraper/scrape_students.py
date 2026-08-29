@@ -12,7 +12,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from scraper.config import ScraperConfig
 from scraper.exceptions import WebFormsError
-from scraper.forms import find_pager_postback_target, parse_html
+from scraper.forms import find_pager_link, find_select_postback_target, parse_html
 from scraper.normalize import parse_date
 from scraper.parse_pages import has_next_page, parse_student_detail, parse_student_grid
 from scraper.webforms_client import WebFormsClient
@@ -53,8 +53,11 @@ def scrape_all(client: WebFormsClient) -> list[dict[str, object]]:
         logging.info("Scraping campus filter: %s", campus_label or "(all)")
 
         if campus_value:
+            field_name, event_target = find_select_postback_target(list_html, "ddlCampus")
+            
             page_html = client.postback(
-                list_html, LIST_PATH, target_hint="ddlCampus"
+                list_html, LIST_PATH, target=event_target,
+                extra_fields={field_name: campus_value}
             )
         else:
             page_html = list_html
@@ -70,7 +73,7 @@ def scrape_all(client: WebFormsClient) -> list[dict[str, object]]:
                 seen_ids.add(row.student_id)
 
                 detail_html = client.postback(
-                    page_html, LIST_PATH, target_hint=row.detail_target
+                    page_html, LIST_PATH, target=row.detail_target
                 )
                 detail = parse_student_detail(detail_html)
 
@@ -92,9 +95,9 @@ def scrape_all(client: WebFormsClient) -> list[dict[str, object]]:
 
             if not has_next_page(page_html):
                 break
-            pager_target = find_pager_postback_target(page_html)
+            pager_target, pager_argument = find_pager_link(page_html, page_number+1)
             page_html = client.postback(
-                page_html, LIST_PATH, target_hint=pager_target, argument=f"Page${page_number + 1}"
+                page_html, LIST_PATH, target=pager_target, argument=pager_argument
             )
             page_number += 1
 
