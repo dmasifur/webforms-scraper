@@ -102,7 +102,7 @@ class WebFormsClient:
         current_html: str,
         path: str,
         *,
-        target: str | None,
+        target: str | None = None,
         target_hint: str | None = None,
         argument: str = "",
         extra_fields: dict[str, str] | None = None,

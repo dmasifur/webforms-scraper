@@ -1,9 +1,8 @@
-
-
 from __future__ import annotations
 
 import logging
 import sys
+from pathlib import Path
 
 from openpyxl import Workbook
 from openpyxl.styles import Font
@@ -22,8 +21,17 @@ LIST_PATH = "/Default.aspx"
 DETAIL_PATH = "/Details.aspx"
 
 HEADER = [
-    "Student ID", "Name", "Campus", "Course", "Enrolled", "Status",
-    "Email", "Phone", "Date of Birth", "Address", "Emergency Contact",
+    "Student ID",
+    "Name",
+    "Campus",
+    "Course",
+    "Enrolled",
+    "Status",
+    "Email",
+    "Phone",
+    "Date of Birth",
+    "Address",
+    "Emergency Contact",
 ]
 
 
@@ -54,10 +62,9 @@ def scrape_all(client: WebFormsClient) -> list[dict[str, object]]:
 
         if campus_value:
             field_name, event_target = find_select_postback_target(list_html, "ddlCampus")
-            
+
             page_html = client.postback(
-                list_html, LIST_PATH, target=event_target,
-                extra_fields={field_name: campus_value}
+                list_html, LIST_PATH, target=event_target, extra_fields={field_name: campus_value}
             )
         else:
             page_html = list_html
@@ -72,9 +79,7 @@ def scrape_all(client: WebFormsClient) -> list[dict[str, object]]:
                     continue  # a student can appear under "All" and a named campus
                 seen_ids.add(row.student_id)
 
-                detail_html = client.postback(
-                    page_html, LIST_PATH, target=row.detail_target
-                )
+                detail_html = client.postback(page_html, LIST_PATH, target=row.detail_target)
                 detail = parse_student_detail(detail_html)
 
                 results.append(
@@ -95,12 +100,14 @@ def scrape_all(client: WebFormsClient) -> list[dict[str, object]]:
 
             if not has_next_page(page_html):
                 break
-            pager_target, pager_argument = find_pager_link(page_html, page_number+1)
+            pager_target, pager_argument = find_pager_link(page_html, page_number + 1)
             page_html = client.postback(
                 page_html, LIST_PATH, target=pager_target, argument=pager_argument
             )
             page_number += 1
-
+    logging.info(
+        "Scrape complete: %d unique students across %d campus filters", len(results), len(campuses)
+    )
     return results
 
 
@@ -116,9 +123,17 @@ def write_excel(rows: list[dict[str, object]], output_path: str) -> None:
     for row in rows:
         ws.append(
             [
-                row["student_id"], row["name"], row["campus"], row["course"],
-                row["enrolled"], row["status"], row["email"], row["phone"],
-                row["date_of_birth"], row["address"], row["emergency_contact"],
+                row["student_id"],
+                row["name"],
+                row["campus"],
+                row["course"],
+                row["enrolled"],
+                row["status"],
+                row["email"],
+                row["phone"],
+                row["date_of_birth"],
+                row["address"],
+                row["emergency_contact"],
             ]
         )
 
@@ -133,12 +148,19 @@ def write_excel(rows: list[dict[str, object]], output_path: str) -> None:
 
 
 def main() -> int:
+
+    config = ScraperConfig.from_env()
+    log_path = Path(config.output_path).parent / "run.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)-8s %(message)s",
         datefmt="%H:%M:%S",
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler(log_path, mode="w", encoding="utf-8"),
+        ],
     )
-    config = ScraperConfig.from_env()
 
     try:
         with WebFormsClient(config.base_url) as client:
